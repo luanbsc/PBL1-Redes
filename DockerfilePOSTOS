@@ -1,0 +1,16 @@
+FROM python:3.9
+
+# Define o diretório de trabalho
+WORKDIR /app
+
+# Copia apenas os arquivos da pasta container_postos
+COPY container_postos .
+
+# Instalar dependências (se houver um requirements.txt)
+# RUN pip install -r requirements.txt
+
+# Expondo a porta
+EXPOSE 8016
+
+# Comando para rodar o servidor
+CMD ["python", "station_server.py"]

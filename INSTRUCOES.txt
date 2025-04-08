@@ -1,0 +1,22 @@
+1 - Criar imagem do nosso servidor :
+docker build -f DockerfileAPISERVIDOR -t imagem_servidor .
+
+2 - criar e rodar um container que mapeia a porta 8015
+docker run -d -p 8015:8015 --name servidor_dockerrun imagem_servidor
+
+3- alterar no arquivo >container_postos>controllers>station_server_controller.py o ip pelo ip da maquina que esta rodando a imagem do servidor
+
+4- criar a imagem do posto 
+docker build -f DockerfilePOSTOS -t imagem_posto .
+
+5- rodar o container do posto na porta 8016
+docker run -d -p 8016:8016 --name servidor_dockerrun imagem_posto
+
+
+6- iniciar o arquivo do cliente com testes automaticos 
+docker build -f DockerfileCLIENTE -t imagem_cliente .
+
+7- rodar o container do cliente com terminal interativo
+docker run -it --rm --name cliente_interativo imagem_cliente
+
+(NESSE TESTE INICIALIZAMOS SOMENTE UM POSTO, CASO NECESSARIO COM A IMAGEM DO POSTO JA CRIAR, CRIAR VARIOS CONTAINERS PARA SIMULAR DIVERSOS POSTOS, TAMBEM POSSIVEL FAZER COM A IMAGEM DO CLIENTE, SOMENTE TROCAR OS NOMES)
