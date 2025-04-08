@@ -41,7 +41,7 @@ class StationController:
         print(f"[DEBUG] Removendo reserva do carro {id}")
         """Libera o carro do posto em que ele está reservado."""
         try:
-            for nome, dados in self.charging_stations.items():
+            for nome, dados in self.posto.items():
                 if id in dados["queue"]:
                     print(f"[DEBUG] Removendo carro {id} da fila do posto {nome}")
                     dados["queue"].remove(id)
