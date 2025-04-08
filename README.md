@@ -106,7 +106,7 @@ Segundo a Associação Brasileira do Veículo Elétrico, o número de veículos 
 <p>Clone o repositório:</p>
 
 <pre>
-git clone https://github.com/seu-usuario/seu-projeto.git
+git clone https://github.com/luanbsc/PBL1-Redes.git
 </pre>
 
 <p>Criar imagem do nosso servidor:</p>
