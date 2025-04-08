@@ -35,8 +35,24 @@ class StationController:
     def get_all_stations(self):
         """Retorna todos os postos (no caso, apenas um)"""
         return self.posto
-
-def checa_tempo_expirou(self):
+    
+    
+    def remover_reserva_carro(self, id):
+        print(f"[DEBUG] Removendo reserva do carro {id}")
+        """Libera o carro do posto em que ele está reservado."""
+        try:
+            for nome, dados in self.charging_stations.items():
+                if id in dados["queue"]:
+                    print(f"[DEBUG] Removendo carro {id} da fila do posto {nome}")
+                    dados["queue"].remove(id)
+                    dados["tempo_expiracao"].pop(id)
+        except Exception as e:
+            print(f"[DEBUG] Erro ao remover reserva: {str(e)}")
+            print(f"Erro ao liberar reserva do carro: {str(e)}")
+            
+            
+    
+    def checa_tempo_expirou(self):
         print("[DEBUG] Verificando tempos expirados")
         try:
             ids = []
@@ -59,3 +75,5 @@ def checa_tempo_expirou(self):
         except Exception as e:
             print(f"[DEBUG] Erro ao verificar tempos expirados: {str(e)}")
             return {"status": "erro", "mensagem": f"Erro ao liberar estações expiradas: {str(e)}"}
+
+    
