@@ -2,17 +2,15 @@ import random
 import time
 import socket
 import json
-import hashlib
+import threading
 
 HOST = "145"  # IP da VPS
 PORT = 8015
 
 def send_request(message):
-    # Divide a mensagem em partes
     parts = message.split(',')
     command = parts[0]
-    
-    # Cria o JSON baseado no comando low_battery,{user.x},{user.y},{user.id}
+
     if command == "low_battery":
         request_data = {
             "action": "low_battery",
@@ -43,17 +41,19 @@ def send_request(message):
         }
     else:
         return {"status": "erro", "mensagem": "Comando não reconhecido"}
-    
-    # Converte para JSON e envia
-    print(f"print do request {request_data}")
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((HOST, PORT))
-    client.sendall(json.dumps(request_data).encode())
-    response = client.recv(1024).decode()
-    response_dict = json.loads(response)
-    print(response_dict['mensagem'])
-    client.close()
-    return response
+
+    try:
+        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client.connect((HOST, PORT))
+        client.sendall(json.dumps(request_data).encode())
+        response = client.recv(1024).decode()
+        client.close()
+        response_dict = json.loads(response)
+        print(f"[{request_data['id']}] {response_dict.get('mensagem', response)}")
+        return response
+    except Exception as e:
+        print(f"Erro na conexão: {e}")
+        return ""
 
 class User:
     def __init__(self, name, car_model, economy, battery):
@@ -76,18 +76,16 @@ def create_random_user():
     return User(name, car_model, economy, battery)
 
 def start(user):
-    print("Iniciando movimentação do carro... Consumo de bateria ativado.")
-    
+    print(f"[{user.id}] Iniciando movimentação do carro...")
+
     while user.battery > 20:
         user.battery -= 1
-        move_x = random.randint(2, 10)
-        move_y = random.randint(2, 10)
-        user.x += random.choice([-1, 1]) * move_x
-        user.y += random.choice([-1, 1]) * move_y
-        print(f"Bateria: {user.battery}% | Localização: ({user.x}, {user.y})")
+        user.x += random.choice([-1, 1]) * random.randint(2, 10)
+        user.y += random.choice([-1, 1]) * random.randint(2, 10)
+        print(f"[{user.id}] Bateria: {user.battery}% | Localização: ({user.x}, {user.y})")
         time.sleep(1)
-    
-    print("Bateria baixa! Enviando alerta...")
+
+    print(f"[{user.id}] Bateria baixa! Enviando alerta...")
     message = f"low_battery,{user.x},{user.y},{user.id}"
     send_request(message)
     check_reserved_stations(user)
@@ -96,28 +94,41 @@ def check_reserved_stations(user):
     while True:
         message = f"get_stations_by_id,{user.id}"
         response = send_request(message)
-        
+
         if "você é o 1º da fila" in response:
-            print("SEU CARRO ESTA CARREGANDO, AGUARDE...")
+            print(f"[{user.id}] CARREGANDO...")
         elif "Nenhuma estação ocupada encontrada para o usuário" in response:
-            print("Carregamento concluído! Bateria recarregada para 100%")
+            print(f"[{user.id}] Carregamento concluído! Bateria recarregada.")
             user.battery = 100
             start(user)
             break
         else:
-            print(response)
-        
+            print(f"[{user.id}] {response}")
+
         time.sleep(10)
 
-def main():
+def simulate_client():
     user = create_random_user()
-    print(f"Carro criado: {user.name} - {user.car_model}")
-    print(f"Bateria inicial: {user.battery}%")
-    print(f"Localização inicial: ({user.x}, {user.y})")
-    print(f"ID do carro: {user.id}")
-    
-    # Inicia o processo automaticamente
+    print(f"[{user.id}] Cliente iniciado: {user.name} - {user.car_model}")
     start(user)
+
+def main():
+    try:
+        threads = int(input("Quantos clientes você deseja simular? "))
+    except ValueError:
+        print("Por favor, insira um número inteiro válido.")
+        return
+
+    for _ in range(threads):
+        thread = threading.Thread(target=simulate_client)
+        thread.daemon = True
+        thread.start()
+        time.sleep(0.2)  # pequeno atraso para não sobrecarregar tudo de uma vez
+
+    print(f"Iniciadas {threads} threads de clientes.")
+    
+    while True:
+        time.sleep(1)  # Mantém o script rodando
 
 if __name__ == "__main__":
     main()

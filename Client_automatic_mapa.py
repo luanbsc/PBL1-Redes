@@ -5,7 +5,7 @@ import json
 import hashlib
 import os
 
-HOST = "192.168.15.132"  # IP da VPS
+HOST = "192"  # IP da VPS
 PORT = 8015
 
 # Constantes do mapa (tamanho reduzido)

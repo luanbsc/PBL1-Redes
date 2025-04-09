@@ -20,15 +20,17 @@ class StationController:
                     cls._instance.last_update = {}   # Armazena o último update de cada posto
         return cls._instance
 
-    def update_station(self, station_data, ip_address):
+    def update_station(self, station_data, ip_address,port):
         print(f"[DEBUG] Atualizando posto com dados: {station_data}")
         """Atualiza os dados de um posto recebido via UDP"""
         with self._stations_lock:
             try:
+                
                 # Converte os dados recebidos para o formato interno
                 station_name = list(station_data.keys())[0]
                 station_info = station_data[station_name]
                 print(f"[DEBUG] Nome do posto: {station_name}")
+                print(f"  VALOR DO STATION_INFO : {station_info}")
                 
                 # Verifica se o posto já existe
                 if station_name in self.charging_stations:
@@ -54,8 +56,9 @@ class StationController:
                         "queue": station_info.get("queue", [])
                     }
                 
-                # Atualiza o IP e timestamp do posto
-                self.stations_ips[station_name] = ip_address
+                # Atualiza o IP e a porta do posto
+                self.stations_ips[station_name] = (ip_address, port)
+                print(f"[DEBUG] IP e porta do posto {station_name}: {self.stations_ips[station_name]}")
                 self.last_update[station_name] = time.time()
                 print(f"[DEBUG] Posto {station_name} atualizado com sucesso")
                 
@@ -66,23 +69,24 @@ class StationController:
 
     def get_all_stations(self):
         print("[DEBUG] Obtendo todos os postos")
-        """Retorna todos os postos ativos (que atualizaram nos últimos 30 segundos)"""
-        with self._stations_lock:
-            current_time = time.time()
-            active_stations = {}
-            
-            for station_name, last_update in self.last_update.items():
-                if current_time - last_update <= 30:  # Posto ativo nos últimos 30 segundos
-                    active_stations[station_name] = self.charging_stations[station_name]
-                else:
-                    # Remove postos inativos
-                    self.charging_stations.pop(station_name, None)
-                    self.stations_ips.pop(station_name, None)
-                    self.last_update.pop(station_name, None)
-                    print(f"[DEBUG] Posto {station_name} removido por inatividade")
-            
-            print(f"[DEBUG] Postos ativos: {active_stations}")
-            return active_stations
+        current_time = time.time()
+        active_stations = {}
+        stations_to_remove = []
+
+        for station_name, last_update in self.last_update.items():
+            if current_time - last_update <= 30:
+                active_stations[station_name] = self.charging_stations[station_name]
+            else:
+                stations_to_remove.append(station_name)
+
+        for station_name in stations_to_remove:
+            self.charging_stations.pop(station_name, None)
+            self.stations_ips.pop(station_name, None)
+            self.last_update.pop(station_name, None)
+            print(f"[DEBUG] Posto {station_name} removido por inatividade")
+
+        print(f"[DEBUG] Postos ativos: {active_stations}")
+        return active_stations
 
     def get_available_stations(self):
         print("[DEBUG] Obtendo postos disponíveis")
@@ -103,19 +107,20 @@ class StationController:
                 }
 
     def get_station_ip(self, station_name):
-        print(f"[DEBUG] Obtendo IP do posto {station_name}")
-        """Retorna o IP de um posto específico"""
+        print(f"[DEBUG] Obtendo IP e porta do posto {station_name}")
+        """Retorna o IP e a porta de um posto específico"""
         with self._stations_lock:
-            ip = self.stations_ips.get(station_name)
-            print(f"[DEBUG] IP do posto {station_name}: {ip}")
-            return ip
+            ip_port = self.stations_ips.get(station_name)
+            print(f"[DEBUG] IP e porta do posto {station_name}: {ip_port}")
+            return ip_port
 
     def get_station_mais_proximo(self, x, y, id):
         print(f"[DEBUG] Buscando posto mais próximo para x={x}, y={y}, id={id}")
         """Retorna o nome do posto mais próximo (não ocupado) e marca como ocupado por 2 minutos."""
         with self._stations_lock:
+            #garantiremos a atualizacao dos postos expirados antes de ver quem pode ser reservado
+            self.get_all_stations()
             print("[DEBUG] Verificando se carro já tem reserva")
-            print(f"valor do posto na funcao : {self.charging_stations} ")
             carro_reservado = self.checa_carro_reserva(id)
             print(f"[DEBUG] Resultado da verificação de reserva: {carro_reservado}")
             
@@ -185,14 +190,14 @@ class StationController:
                     print(f"[DEBUG] Removendo reserva do carro {id_carro_remover.split('/')[0]} do posto {id_carro_remover.split('/')[1]}")
                     self.remover_reserva_carro(id_carro_remover.split('/')[0])
                 
-                    posto_ip = self.stations_ips.get(id_carro_remover.split('/')[1])
-                    if not posto_ip:
-                        print(f"[DEBUG] IP não encontrado para o posto {id_carro_remover.split('/')[1]}")
+                    posto_ip_port = self.stations_ips.get(id_carro_remover.split('/')[1])
+                    if not posto_ip_port:
+                        print(f"[DEBUG] IP e porta não encontrados para o posto {id_carro_remover.split('/')[1]}")
                         continue  # Pula se não tiver IP do posto
 
                     response = SocketController.send_station_update(
                         {id_carro_remover.split('/')[1]: self.charging_stations[id_carro_remover.split('/')[1]]},
-                        posto_ip
+                        posto_ip_port
                     )
 
                     if response["status"] == "sucesso":
@@ -239,13 +244,13 @@ class StationController:
                 station_data["id"] = id
                 station_data["queue"].append(id)
                     
-                # Obtém o IP do posto
-                posto_ip = self.stations_ips.get(station_name)
-                if not posto_ip:
-                    raise Exception(f"IP não encontrado para o posto {station_name}")
+                # Obtém o IP e a porta do posto
+                posto_ip_port = self.stations_ips.get(station_name)
+                if not posto_ip_port:
+                    raise Exception(f"IP e porta não encontrados para o posto {station_name}")
                     
                 # Envia os dados atualizados diretamente para o posto
-                response = SocketController.send_station_update({station_name: station_data}, posto_ip)
+                response = SocketController.send_station_update({station_name: station_data}, posto_ip_port)
                     
                 if response["status"] == "sucesso":
                     # Se o posto aceitou a atualização, aplica as mudanças localmente
@@ -280,6 +285,7 @@ class StationController:
 
     def get_stations_by_id(self, id_usuario):
         print(f"[DEBUG] Buscando estações do usuário {id_usuario}")
+        self.get_all_stations()
         """Retorna todas as estações ocupadas por um determinado ID e a mensagem com a estação mais próxima."""
         with self._stations_lock:
             try:

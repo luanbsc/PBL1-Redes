@@ -4,7 +4,7 @@ import socket
 import json
 import hashlib
 
-HOST = "192.168.0.114"  # IP da VPS
+HOST = "142"  # IP da VPS
 PORT = 8015
 
 def send_request(message):

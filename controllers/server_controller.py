@@ -39,9 +39,10 @@ class ServerController:
                 if json_data.get("type") == "station_update":
                     station_ip = addr[0]  # IP do posto
                     station_data = json_data.get("data")
+                    print(f"[UDP] Dados recebidos de {station_ip}: {json_data}")
                     
                     # Atualiza os dados do posto usando o StationController
-                    self.station.update_station(station_data, station_ip)
+                    self.station.update_station(station_data, station_ip,json_data.get("port"))
                     print(f"[UDP] Dados do posto atualizados de {station_ip}")
                     
             except Exception as e:

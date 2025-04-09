@@ -5,18 +5,19 @@ class SocketController:
     POSTO_PORT = 8016  # Porta padrão dos postos
 
     @staticmethod
-    def send_station_update(station_data, posto_ip):
+    def send_station_update(station_data, posto_ip_port):
         """
         Envia os dados atualizados diretamente para o posto
         """
         try:
-            print(f"[DEBUG] Enviando atualização para o posto no IP {posto_ip}")
+            posto_ip, posto_port = posto_ip_port
+            print(f"[DEBUG] Enviando atualização para o posto no IP {posto_ip} e porta {posto_port}")
             
             # Cria o socket TCP
             client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             
             # Conecta ao posto
-            client_socket.connect((posto_ip, SocketController.POSTO_PORT))
+            client_socket.connect((posto_ip, posto_port))
             
             # Prepara os dados no formato esperado pelo posto
             request_data = {

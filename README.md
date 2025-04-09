@@ -106,7 +106,8 @@ Segundo a Associação Brasileira do Veículo Elétrico, o número de veículos 
 <p>Clone o repositório:</p>
 
 <pre>
-git clone https://github.com/seu-usuario/seu-projeto.git
+git clone https://github.com/luanbsc/PBL1-Redes.git
+cd PBL1-Redes
 </pre>
 
 <p>Criar imagem do nosso servidor:</p>
@@ -121,7 +122,7 @@ docker build -f DockerfileAPISERVIDOR -t imagem_servidor .
 docker run -d -p 8015:8015 --name servidor_dockerrun imagem_servidor
 </pre>
 
-<p>Alterar no arquivo >container_postos>controllers>station_server_controller.py o ip pelo ip da maquina que esta rodando a imagem do servidor</p>
+<p>Alterar no arquivo >container_postos>controllers>station_server_controller.py o IP pela máquina que está rodando o servidor</p>
 
 <p>Criar a imagem do posto:</p>
 
@@ -129,13 +130,13 @@ docker run -d -p 8015:8015 --name servidor_dockerrun imagem_servidor
 docker build -f DockerfilePOSTOS -t imagem_posto .
 </pre>
 
-<p>Rodar o container do posto na porta 8016:</p>
+<p>Rodar o container do posto na porta que você desejar passando ela no env:</p>
 
 <pre>
-docker run -d -p 8016:8016 --name servidor_dockerrun imagem_posto
+docker run -it -p 9001:9001 -e STATION_TCP_PORT=9001 --name posto_1 imagem_posto
 </pre>
 
-<p>Iniciar o arquivo do cliente com testes automaticos:</p>
+<p>Iniciar o arquivo do cliente com testes automáticos:</p>
 
 <pre>
 docker build -f DockerfileCLIENTE -t imagem_cliente .
@@ -145,6 +146,29 @@ docker build -f DockerfileCLIENTE -t imagem_cliente .
 
 <pre>
 docker run -it --rm --name cliente_interativo imagem_cliente
+</pre>
+
+<hr/>
+
+<p>Dessa forma você conseguiu inicializar o servidor, um cliente e apenas um posto.</p>
+
+<p>Caso queira fazer um teste de estresse, autorize os scripts de criação de containers para execução:</p>
+
+<pre>
+chmod +x start_postos.sh
+chmod +x stop_postos.sh
+</pre>
+
+<p>Agora, execute o script para iniciar a criação de 100 postos:</p>
+
+<pre>
+./start_postos.sh
+</pre>
+
+<p>Caso queira apagar todos os containers dos postos, basta rodar:</p>
+
+<pre>
+./stop_postos.sh
 </pre>
 
 <hr/>
