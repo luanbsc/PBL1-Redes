@@ -7,7 +7,6 @@ import hashlib
 HOST = "142"  # IP da VPS
 PORT = 8015
 
-# Teste do Git
 
 def send_request(message):
     # Divide a mensagem em partes
