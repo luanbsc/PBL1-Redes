@@ -207,7 +207,7 @@ Cliente -> Servidor: Finaliza carregamento
     <td>Cliente, Servidor, Postos</td>
   </tr>
   <tr>
-    <td>Robson</td>
+    <td>Robson Jones</td>
     <td>Cliente, Documentação</td>
   </tr>
 </table>
